@@ -1,0 +1,24 @@
+{
+  "name": "cse3310-server",
+  "version": "1.0.0",
+  "description": "Server fun",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Anthony-Tatowicz/CSE3310-Server.git"
+  },
+  "author": "Conrad",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Anthony-Tatowicz/CSE3310-Server/issues"
+  },
+  "homepage": "https://github.com/Anthony-Tatowicz/CSE3310-Server#readme",
+  "dependencies": {
+    "express": "^4.14.0",
+    "mongoose": "^4.6.8",
+    "queue": "^4.0.0"
+  }
+}
