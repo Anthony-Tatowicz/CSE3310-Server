@@ -17,8 +17,12 @@
   },
   "homepage": "https://github.com/Anthony-Tatowicz/CSE3310-Server#readme",
   "dependencies": {
+    "bluebird": "^3.4.6",
+    "body-parser": "^1.15.2",
     "express": "^4.14.0",
+    "method-override": "^2.3.7",
     "mongoose": "^4.6.8",
+    "morgan": "^1.7.0",
     "queue": "^4.0.0"
   }
 }
