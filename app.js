@@ -100,7 +100,7 @@ var Appointment = new Schema({
 });
 
 
-var AppoinmentModel = mongoose.model('Appointment', Appointment);
+var AppointmentModel = mongoose.model('Appointment', Appointment);
 
 /* Appoinment Document 
 [
@@ -122,31 +122,41 @@ var AppoinmentModel = mongoose.model('Appointment', Appointment);
 console.log("Initializing queue...");
 var queue = [];
 
-var promise = AppoinmentModel.find().exec() 
+var promise = AppointmentModel.find().exec() 
 
 promise.then(function(appoinments) {
   console.log("Saved queue");
-    console.log(appoinments);
-    for(var i = 0; i < appoinments.length; i++) {
-      var pos = appoinments[i].position;
-      queue[pos] = appoinments[i];
-    }
+  console.log(appoinments);
+  for(var i = 0; i < appoinments.length; i++) {
+    var pos = appoinments[i].position;
+    queue[pos] = appoinments[i];
+  }
 })
 .catch(function(err) {
   console.log(err);
   console.log("Could not recover stored state");
 });
 
-function dequeue_app() {
+function dequeue_app(idx) {
   if(queue.length == 1) {
     queue = [];
   } 
   else {
-    for(var i = 0; i < queue.length - 1; i++) {
+    for(var i = idx; i < queue.length - 1; i++) {
       queue[i] = queue[i + 1];
+      queue[i].position = i;
     }
   }
 }
+
+// function move(to_pos, from_pos) {
+//   if(idx < 0) return;
+//   for(var i = to_pos; i < queue.length; i++) {
+//     var temp = queue[to_pos];
+//     queue[to_pos] = queue[from_pos];
+
+//   }
+// }
 
 // REST api
 
@@ -156,7 +166,7 @@ app.get('/api', function (req, res) {
 
 // POST to CREATE
 app.post('/api/appointments', function (req, res) {
-  var appoinment = new AppoinmentModel({
+  var appoinment = new AppointmentModel({
     description: req.body.description,
     student: req.body.student,
     advisorId: req.body.advisorId,
@@ -191,10 +201,10 @@ app.put('/api/appoinments', function (req, res) {
     }
     for (i = 0; i < len; i++) {
         console.log("UPDATE appoinment by id:");
-        for (var id in req.body.products[i]) {
+        for (var id in req.body.appoinments[i]) {
             console.log(id);
         }
-        AppoinmentModel.update({ "_id": id }, req.body.products[i][id], function (err, numAffected) {
+        AppointmentModel.update({ "_id": id }, req.body.appoinments[i][id], function (err, numAffected) {
             if (err) {
                 console.log("Error on update");
                 console.log(err);
@@ -209,7 +219,7 @@ app.put('/api/appoinments', function (req, res) {
 
 // Single update
 app.put('/api/appoinments/:id', function (req, res) {
-  return AppoinmentModel.findById(req.params.id, function (err, appoinment) {
+  return AppointmentModel.findById(req.params.id, function (err, appoinment) {
     appoinment.description = req.body.description;
     appoinment.student = req.body.student;
     appoinment.advisor = req.body.advisor;
@@ -231,18 +241,12 @@ app.put('/api/appoinments/:id', function (req, res) {
 
 // List Appoinments
 app.get('/api/appointments', function (req, res) {
-  return AppoinmentModel.find(function (err, appoinments) {
-    if (!err) {
-      return res.send(queue);
-    } else {
-      return res.send(err);
-    }
-  });
+  return res.send(queue);
 });
 
 // Single appoinment
 app.get('/api/appointments/:id', function (req, res) {
-  return AppoinmentModel.findById(req.params.id, function (err, appoinment) {
+  return AppointmentModel.findById(req.params.id, function (err, appoinment) {
     if (!err) {
       return res.send(appoinment);
     } else {
@@ -255,7 +259,7 @@ app.get('/api/appointments/:id', function (req, res) {
 
 // Bulk destroy all appoinments
 app.delete('/api/appointments', function (req, res) {
-  AppoinmentModel.remove(function (err) {
+  AppointmentModel.remove(function (err) {
     if (!err) {
       console.log("removed");
       queue = [];
@@ -268,10 +272,14 @@ app.delete('/api/appointments', function (req, res) {
 
 // remove a single appoinment
 app.delete('/api/appointments/:id', function (req, res) {
-  return AppoinmentModel.findById(req.params.id, function (err, appoinment) {
+  return AppointmentModel.findById(req.params.id, function (err, appoinment) {
     return appoinment.remove(function (err) {
       if (!err) {
-        dequeue_app();
+        for(var i = 0; i < queue.length; i++) {
+          if(req.param.id === appoinment._id) {
+            dequeue_app(i);
+          }
+        }
         console.log("removed");
         return res.send('');
       } else {
@@ -281,6 +289,27 @@ app.delete('/api/appointments/:id', function (req, res) {
   });
 });
 
+// Get next up
+app.get('/api/appointments/next', function (req, res) {
+  return res.send(queue[0]);
+});
+
+// Remove next up
+app.delete('/api/appointments/next', function (req, res) {
+  console.log('Removing -->' + queue[0]._id)
+  var promise = AppointmentModel.findById(queue[0]._id).exec();
+  promise.then(function(appointment) {
+    return appointment.remove()
+  })
+  .then(function(appointment) {
+    console.log("dequeuing")
+    dequeue_app();
+    res.send(queue)
+  })
+  .catch(function(err) {
+    console.log(err);
+  })
+});
 
 // Add Advisor
 app.post('/api/advisors', function (req, res) {
@@ -320,6 +349,23 @@ app.put('/api/advisors/:id', function (req, res) {
   })
 });
 
+// Update Advisor Status
+app.put('/api/advisors/:id/status', function (req, res) {
+  var promise = AdvisorModel.findById(req.params.id).exec();
+  promise.then(function(advisor) {
+    advisor.status = req.body.status;
+    return advisor.save();
+  })
+  .then(function(advisor) {
+    console.log("Advisor Updated!");
+    return res.send(advisor);
+  })
+  .catch(function(err) {
+    console.log(err);
+    return res.send(err);
+  })
+});
+
 // Get Advisors
 app.get('/api/advisors', function (req, res) {
  return AdvisorModel.find(function (err, advisors) {
@@ -346,7 +392,7 @@ app.get('/api/advisors/:id', function (req, res) {
 })
 
 // Delete Advsior
-app.get('/api/advisors/:id', function (req, res) {
+app.delete('/api/advisors/:id', function (req, res) {
   return AdvisorModel.findById(req.params.id, function (err, advisor) {
     return advisor.remove(function (err) {
       if (!err) {
