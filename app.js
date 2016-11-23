@@ -103,18 +103,23 @@ var Appointment = new Schema({
 var AppointmentModel = mongoose.model('Appointment', Appointment);
 
 /* Appoinment Document 
-[
 {  
   "description": "I need to DROP",    
-  "type": "DROP",
+  "type": "Drop",
   "student": [{
     "name": "Leeroy Jenkins",
     "studenId": 10005959
   }],
-  "advisor" : "STEFAN",
+  "advisorId" : "5833af88321f5f26ccd9231b",
   "extraInfo": "Hey, where is Dr. Beckers office?"
 }
-]
+*/
+
+/* Advisor Document
+    {
+        "name": "Barach",
+        "status": "Busy"
+    }
 */
 
 
@@ -225,6 +230,22 @@ app.put('/api/appoinments/:id', function (req, res) {
     appoinment.advisor = req.body.advisor;
     appoinment.type = req.body.type;
     appoinment.extraInfo = req.body.extraInfo;
+    return appoinment.save(function (err) {
+      if (!err) {
+        console.log("updated");
+        return res.send(appoinment);
+      } else {
+        console.log(err);
+        return res.send(err);
+      }
+    });
+  });
+});
+
+// Update Appointment state
+app.put('/api/appoinments/:id/state', function (req, res) {
+  return AppointmentModel.findById(req.params.id, function (err, appoinment) {
+    appoinment.state = req.body.state;
     return appoinment.save(function (err) {
       if (!err) {
         console.log("updated");
