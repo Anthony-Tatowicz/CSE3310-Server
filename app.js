@@ -92,7 +92,7 @@ var Appointment = new Schema({
     type: { 
         type: String, 
         enum: ['Advising', 'Drop', 'Other'],
-        required: 'Appoinment type required'
+        required: 'Wrong Appointment Type or No appoinment Type'
     },
     extraInfo: { type: String },
     position: { type: Number, default: -1 },
@@ -195,7 +195,7 @@ app.post('/api/appointments', function (req, res) {
 // PUT to UPDATE
 
 // Bulk update
-app.put('/api/appoinments', function (req, res) {
+app.put('/api/appointments', function (req, res) {
     var i, len = 0;
     console.log("is Array req.body.appoinments");
     console.log(Array.isArray(req.body.appoinments));
@@ -223,7 +223,7 @@ app.put('/api/appoinments', function (req, res) {
 });
 
 // Single update
-app.put('/api/appoinments/:id', function (req, res) {
+app.put('/api/appointments/:id', function (req, res) {
   return AppointmentModel.findById(req.params.id, function (err, appoinment) {
     appoinment.description = req.body.description;
     appoinment.student = req.body.student;
@@ -243,7 +243,7 @@ app.put('/api/appoinments/:id', function (req, res) {
 });
 
 // Update Appointment state
-app.put('/api/appoinments/:id/state', function (req, res) {
+app.put('/api/appointments/:id/state', function (req, res) {
   return AppointmentModel.findById(req.params.id, function (err, appoinment) {
     appoinment.state = req.body.state;
     return appoinment.save(function (err) {
@@ -284,7 +284,7 @@ app.delete('/api/appointments', function (req, res) {
     if (!err) {
       console.log("removed");
       queue = [];
-      return res.send('');
+      return res.send(queue);
     } else {
       return res.send(err);
     }
