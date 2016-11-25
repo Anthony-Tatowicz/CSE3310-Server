@@ -154,6 +154,7 @@ function dequeue_app(idx) {
   }
 }
 
+
 // function move(to_pos, from_pos) {
 //   if(idx < 0) return;
 //   for(var i = to_pos; i < queue.length; i++) {
@@ -177,7 +178,7 @@ app.post('/api/appointments', function (req, res) {
     advisorId: req.body.advisorId,
     type: req.body.type,
     extraInfo: req.body.extraInfo,
-    position: queue.length + 1
+    position: queue.length
   });
   
   appoinment.save(function (err) {
@@ -195,32 +196,32 @@ app.post('/api/appointments', function (req, res) {
 // PUT to UPDATE
 
 // Bulk update
-app.put('/api/appointments', function (req, res) {
-    var i, len = 0;
-    console.log("is Array req.body.appoinments");
-    console.log(Array.isArray(req.body.appoinments));
-    console.log("PUT: (appoinments)");
-    console.log(req.body.appoinments);
-    if (Array.isArray(req.body.appoinments)) {
-        len = req.body.appoinments.length;
-    }
-    for (i = 0; i < len; i++) {
-        console.log("UPDATE appoinment by id:");
-        for (var id in req.body.appoinments[i]) {
-            console.log(id);
-        }
-        AppointmentModel.update({ "_id": id }, req.body.appoinments[i][id], function (err, numAffected) {
-            if (err) {
-                console.log("Error on update");
-                console.log(err);
-                return res.send(err);
-            } else {
-                console.log("updated num: " + numAffected);
-                return res.send(req.body.appoinments)
-            }
-        });
-    }
-});
+// app.put('/api/appointments', function (req, res) {
+//     var i, len = 0;
+//     console.log("is Array req.body.appoinments");
+//     console.log(Array.isArray(req.body.appoinments));
+//     console.log("PUT: (appoinments)");
+//     console.log(req.body.appoinments);
+//     if (Array.isArray(req.body.appoinments)) {
+//         len = req.body.appoinments.length;
+//     }
+//     for (i = 0; i < len; i++) {
+//         console.log("UPDATE appoinment by id:");
+//         for (var id in req.body.appoinments[i]) {
+//             console.log(id);
+//         }
+//         AppointmentModel.update({ "_id": id }, req.body.appoinments[i][id], function (err, numAffected) {
+//             if (err) {
+//                 console.log("Error on update");
+//                 console.log(err);
+//                 return res.send(err);
+//             } else {
+//                 console.log("updated num: " + numAffected);
+//                 return res.send(req.body.appoinments)
+//             }
+//         });
+//     }
+// });
 
 // Single update
 app.put('/api/appointments/:id', function (req, res) {
@@ -233,6 +234,7 @@ app.put('/api/appointments/:id', function (req, res) {
     return appoinment.save(function (err) {
       if (!err) {
         console.log("updated");
+        queue[appoinment.position] = appoinment;
         return res.send(appoinment);
       } else {
         console.log(err);
@@ -249,6 +251,7 @@ app.put('/api/appointments/:id/state', function (req, res) {
     return appoinment.save(function (err) {
       if (!err) {
         console.log("updated");
+        queue[appoinment.position] = appoinment;
         return res.send(appoinment);
       } else {
         console.log(err);
@@ -296,11 +299,7 @@ app.delete('/api/appointments/:id', function (req, res) {
   return AppointmentModel.findById(req.params.id, function (err, appoinment) {
     return appoinment.remove(function (err) {
       if (!err) {
-        for(var i = 0; i < queue.length; i++) {
-          if(req.param.id === appoinment._id) {
-            dequeue_app(i);
-          }
-        }
+        dequeue_app(appoinment.position);
         console.log("removed");
         return res.send('');
       } else {
@@ -312,6 +311,7 @@ app.delete('/api/appointments/:id', function (req, res) {
 
 // Get next up
 app.get('/api/appointments/next', function (req, res) {
+  console.log(queue[0])
   return res.send(queue[0]);
 });
 
