@@ -86,7 +86,7 @@ var Appointment = new Schema({
     },
     state: { 
       type: String,
-      enum: ['Waiting', 'In Progress', 'done'],
+      enum: ['Waiting', 'In Progress', 'Done'],
       default: 'Waiting',
     },
     type: { 
@@ -112,6 +112,7 @@ var AppointmentModel = mongoose.model('Appointment', Appointment);
   }],
   "advisorId" : "5833af88321f5f26ccd9231b",
   "extraInfo": "Hey, where is Dr. Beckers office?"
+  "state": "Waiting" ( optional or for updates)
 }
 */
 
@@ -133,8 +134,10 @@ promise.then(function(appoinments) {
   console.log("Saved queue");
   console.log(appoinments);
   for(var i = 0; i < appoinments.length; i++) {
-    var pos = appoinments[i].position;
-    queue[pos] = appoinments[i];
+    if(appoinment.state !== "Done") {
+      var pos = appoinments[i].position;
+      queue[pos] = appoinments[i];
+    }
   }
 })
 .catch(function(err) {
