@@ -13,7 +13,7 @@ mongoose.Promise = require('bluebird');
 var app = express();
 
 // database
-console.log("Connecting to db...");
+console.log("Connecting to db... " + process.env.MONGO);
 mongoose.connect(process.env.MONGO);
 
 // config
@@ -43,6 +43,11 @@ var Advisors = new Schema({
 });
 
 var AdvisorModel = mongoose.model('Advisor', Advisors);
+
+var CourseCatalogModel = mongoose.model('CourseCatalog', new Schema({
+  title: String,
+  desc: String
+}), 'course_catalog');
 
 var Students = new Schema({
     name: { 
@@ -428,6 +433,13 @@ app.delete('/api/advisors/:id', function (req, res) {
       }
     });
   });
+});
+
+/* -- Course Catalog --  */
+app.get('/api/courses', (req, res) => {
+  CourseCatalogModel.find().then(courses => {
+    return res.send(courses);
+  })
 });
 
 function clientErrorHandler (err, req, res, next) {
