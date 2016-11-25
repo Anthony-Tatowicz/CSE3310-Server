@@ -65,7 +65,7 @@ var Students = new Schema({
 });
 
 
-// Appoinments Model
+// Appointment Model
 var Appointment = new Schema({
     description: { 
       type: String, 
@@ -76,7 +76,7 @@ var Appointment = new Schema({
     student: [Students],
     advisorId: { 
       type: String, 
-      required: [true, 'Advisor required for appoinment'],
+      required: [true, 'Advisor required for appointment'],
       validate: {
           validator: function(advisorId) {
             var promise = AdvisorModel.findById(advisorId).exec();
@@ -97,7 +97,7 @@ var Appointment = new Schema({
     type: { 
         type: String, 
         enum: ['Advising', 'Drop', 'Other'],
-        required: 'Wrong Appointment Type or No appoinment Type'
+        required: 'Wrong Appointment Type or No appointment Type'
     },
     extraInfo: { type: String },
     position: { type: Number, default: -1 },
@@ -107,7 +107,7 @@ var Appointment = new Schema({
 
 var AppointmentModel = mongoose.model('Appointment', Appointment);
 
-/* Appoinment Document 
+/* Appointment Document 
 {  
   "description": "I need to DROP",    
   "type": "Drop",
@@ -135,13 +135,13 @@ var queue = [];
 
 var promise = AppointmentModel.find().exec() 
 
-promise.then(function(appoinments) {
+promise.then(function(appointment) {
   console.log("Saved queue");
-  console.log(appoinments);
-  for(var i = 0; i < appoinments.length; i++) {
-    if(appoinment.state !== "Done") {
-      var pos = appoinments[i].position;
-      queue[pos] = appoinments[i];
+  console.log(appointment);
+  for(var i = 0; i < appointment.length; i++) {
+    if(appointment.state !== "Done") {
+      var pos = appointment[i].position;
+      queue[pos] = appointment[i];
     }
   }
 })
@@ -180,7 +180,7 @@ app.get('/api', function (req, res) {
 
 // POST to CREATE
 app.post('/api/appointments', function (req, res) {
-  var appoinment = new AppointmentModel({
+  var appointment = new AppointmentModel({
     description: req.body.description,
     student: req.body.student,
     advisorId: req.body.advisorId,
@@ -189,12 +189,12 @@ app.post('/api/appointments', function (req, res) {
     position: queue.length
   });
   
-  appoinment.save(function (err) {
+  appointment.save(function (err) {
     if (!err) {
-      queue.push(appoinment);
+      queue.push(appointment);
       console.log("Place in queue");
       console.log(queue[queue.length - 1].position)
-      return res.send(appoinment)
+      return res.send(appointment)
     } else {
       return res.send(err)
     }
@@ -206,26 +206,26 @@ app.post('/api/appointments', function (req, res) {
 // Bulk update
 // app.put('/api/appointments', function (req, res) {
 //     var i, len = 0;
-//     console.log("is Array req.body.appoinments");
-//     console.log(Array.isArray(req.body.appoinments));
-//     console.log("PUT: (appoinments)");
-//     console.log(req.body.appoinments);
-//     if (Array.isArray(req.body.appoinments)) {
-//         len = req.body.appoinments.length;
+//     console.log("is Array req.body.appointment");
+//     console.log(Array.isArray(req.body.appointment));
+//     console.log("PUT: (appointment)");
+//     console.log(req.body.appointment);
+//     if (Array.isArray(req.body.appointment)) {
+//         len = req.body.appointment.length;
 //     }
 //     for (i = 0; i < len; i++) {
-//         console.log("UPDATE appoinment by id:");
-//         for (var id in req.body.appoinments[i]) {
+//         console.log("UPDATE appointment by id:");
+//         for (var id in req.body.appointment[i]) {
 //             console.log(id);
 //         }
-//         AppointmentModel.update({ "_id": id }, req.body.appoinments[i][id], function (err, numAffected) {
+//         AppointmentModel.update({ "_id": id }, req.body.appointment[i][id], function (err, numAffected) {
 //             if (err) {
 //                 console.log("Error on update");
 //                 console.log(err);
 //                 return res.send(err);
 //             } else {
 //                 console.log("updated num: " + numAffected);
-//                 return res.send(req.body.appoinments)
+//                 return res.send(req.body.appointment)
 //             }
 //         });
 //     }
@@ -233,17 +233,17 @@ app.post('/api/appointments', function (req, res) {
 
 // Single update
 app.put('/api/appointments/:id', function (req, res) {
-  return AppointmentModel.findById(req.params.id, function (err, appoinment) {
-    appoinment.description = req.body.description;
-    appoinment.student = req.body.student;
-    appoinment.advisor = req.body.advisor;
-    appoinment.type = req.body.type;
-    appoinment.extraInfo = req.body.extraInfo;
-    return appoinment.save(function (err) {
+  return AppointmentModel.findById(req.params.id, function (err, appointment) {
+    appointment.description = req.body.description;
+    appointment.student = req.body.student;
+    appointment.advisor = req.body.advisor;
+    appointment.type = req.body.type;
+    appointment.extraInfo = req.body.extraInfo;
+    return appointment.save(function (err) {
       if (!err) {
         console.log("updated");
-        queue[appoinment.position] = appoinment;
-        return res.send(appoinment);
+        queue[appointment.position] = appointment;
+        return res.send(appointment);
       } else {
         console.log(err);
         return res.send(err);
@@ -254,13 +254,13 @@ app.put('/api/appointments/:id', function (req, res) {
 
 // Update Appointment state
 app.put('/api/appointments/:id/state', function (req, res) {
-  return AppointmentModel.findById(req.params.id, function (err, appoinment) {
-    appoinment.state = req.body.state;
-    return appoinment.save(function (err) {
+  return AppointmentModel.findById(req.params.id, function (err, appointment) {
+    appointment.state = req.body.state;
+    return appointment.save(function (err) {
       if (!err) {
         console.log("updated");
-        queue[appoinment.position] = appoinment;
-        return res.send(appoinment);
+        queue[appointment.position] = appointment;
+        return res.send(appointment);
       } else {
         console.log(err);
         return res.send(err);
@@ -271,16 +271,16 @@ app.put('/api/appointments/:id/state', function (req, res) {
 
 // GET to READ
 
-// List Appoinments
+// List appointment
 app.get('/api/appointments', function (req, res) {
   return res.send(queue);
 });
 
-// Single appoinment
+// Single appointment
 app.get('/api/appointments/:id', function (req, res) {
-  return AppointmentModel.findById(req.params.id, function (err, appoinment) {
+  return AppointmentModel.findById(req.params.id, function (err, appointment) {
     if (!err) {
-      return res.send(appoinment);
+      return res.send(appointment);
     } else {
       return res.send(err);
     }
@@ -289,7 +289,7 @@ app.get('/api/appointments/:id', function (req, res) {
 
 // DELETE to DESTROY
 
-// Bulk destroy all appoinments
+// Bulk destroy all appointment
 app.delete('/api/appointments', function (req, res) {
   AppointmentModel.remove(function (err) {
     if (!err) {
@@ -302,12 +302,12 @@ app.delete('/api/appointments', function (req, res) {
   });
 });
 
-// remove a single appoinment
+// remove a single appointment
 app.delete('/api/appointments/:id', function (req, res) {
-  return AppointmentModel.findById(req.params.id, function (err, appoinment) {
-    return appoinment.remove(function (err) {
+  return AppointmentModel.findById(req.params.id, function (err, appointment) {
+    return appointment.remove(function (err) {
       if (!err) {
-        dequeue_app(appoinment.position);
+        dequeue_app(appointment.position);
         console.log("removed");
         return res.send('');
       } else {
@@ -326,7 +326,7 @@ app.get('/api/appointments/next', function (req, res) {
 // Remove next up
 app.delete('/api/appointments/next', function (req, res) {
   console.log('Removing -->' + queue[0]._id)
-  var promise = AppointmentModel.findById(queue[0]._id).exec();
+  var promise = AppointmentModel.findById(queue[0].id).exec();
   promise.then(function(appointment) {
     return appointment.remove()
   })
