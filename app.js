@@ -5,12 +5,19 @@ var application_root = __dirname,
     bodyParser = require('body-parser'),
     methodOverride = require('method-override'),
     morgan = require('morgan');
+    Pusher = require('pusher');
 
 mongoose.Promise = require('bluebird');
 
-
+const CHANNEL = 'test_channel';
 
 var app = express();
+var pusher = new Pusher({
+  appId: '273037',
+  key: '0caec0623dbc96e698fc',
+  secret: 'da3e038a73620d26cad6',
+  encrypted: true
+});
 
 // database
 console.log("Connecting to db... " + process.env.MONGO);
@@ -192,6 +199,10 @@ app.post('/api/appointments', function (req, res) {
       queue.push(appointment);
       console.log("Place in queue");
       console.log(queue[queue.length - 1].position)
+
+      // Pusher
+      pusher.trigger('kiosk', 'new_appointment', appointment);
+
       return res.send(appointment)
     } else {
       return res.status(400).send(err)
