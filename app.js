@@ -56,11 +56,8 @@ var Students = new Schema({
       min: 2,
       max: 50
     },
-    phoneNumber: { 
-      type: Number, 
-      validate: function(phoneNumber) { return phoneNumber.length == 10 }
-    },
-    studenId: { type: Number, required: [true, "Student ID is required"] },
+    phoneNumber: Number,
+    studentId: { type: Number, required: [true, "Student ID is required"] },
     modified: { type: Date, default: Date.now }
 });
 
@@ -75,8 +72,7 @@ var Appointment = new Schema({
     },
     student: [Students],
     advisorId: { 
-      type: String, 
-      required: [true, 'Advisor required for appointment'],
+      type: String,
       validate: {
           validator: function(advisorId) {
             var promise = AdvisorModel.findById(advisorId).exec();
@@ -180,9 +176,11 @@ app.get('/api', function (req, res) {
 
 // POST to CREATE
 app.post('/api/appointments', function (req, res) {
+  console.log('creating appointment');
+  console.log(req.body);
   var appointment = new AppointmentModel({
     description: req.body.description,
-    student: req.body.student,
+    student: [req.body.student],
     advisorId: req.body.advisorId,
     type: req.body.type,
     extraInfo: req.body.extraInfo,
@@ -196,7 +194,7 @@ app.post('/api/appointments', function (req, res) {
       console.log(queue[queue.length - 1].position)
       return res.send(appointment)
     } else {
-      return res.send(err)
+      return res.status(400).send(err)
     }
   });
 });
@@ -273,7 +271,10 @@ app.put('/api/appointments/:id/state', function (req, res) {
 
 // List appointment
 app.get('/api/appointments', function (req, res) {
-  return res.send(queue);
+  AppointmentModel.find({state: { $ne: 'Done' }})
+    .then(apps => {
+      return res.send(apps);
+    })
 });
 
 // Single appointment
