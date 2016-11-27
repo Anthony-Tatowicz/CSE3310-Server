@@ -9,7 +9,6 @@ var application_root = __dirname,
 mongoose.Promise = require('bluebird');
 
 
-
 var app = express();
 
 // database
@@ -72,17 +71,7 @@ var Appointment = new Schema({
     advisorId: { 
       type: String, 
       required: [true, 'Advisor required for appointment'],
-      validate: {
-          validator: function(advisorId) {
-            var promise = AdvisorModel.findById(advisorId).exec();
-            promise.then(function(advisor) {
-              return advisor.status == 'Available' || advisor.satus == 'Busy';
-            })
-            .catch(function(err) {
-              return false;
-           })},
-          message : '{VALUE} is not a valid advisor!'
-        }
+      default: "Next Advisor"
     },
     state: { 
       type: String,
@@ -147,13 +136,28 @@ promise.then(function(appointment) {
 
 function dequeue_app(idx) {
   if(queue.length == 1) {
+    console.log("Queue length of 1 making new Array");
     queue = [];
   } 
   else {
+    console.log("Removing -> " + queue[idx])
     for(var i = idx; i < queue.length - 1; i++) {
-      queue[i] = queue[i + 1];
-      queue[i].position = i;
+      console.log("UDATE -> " + queue[i+1].id);
+      var promise = AppointmentModel.findById(queue[i+1].id).exec();
+      promise.then(function(appointment) {
+        console.log("Updating -> " + appointment)
+        appointment.position = i;
+        return appointment.save();
+      })
+      .then(function(appointment) {
+        queue[i] = queue[i + 1];
+        queue[i].position = i;
+      })
+      .catch(function(err) {
+        console.log(err);
+      })
     }
+    queue.pop();
   }
 }
 
@@ -163,7 +167,6 @@ function dequeue_app(idx) {
 //   for(var i = to_pos; i < queue.length; i++) {
 //     var temp = queue[to_pos];
 //     queue[to_pos] = queue[from_pos];
-
 //   }
 // }
 
@@ -282,6 +285,12 @@ app.get('/api/appointments/:id', function (req, res) {
   });
 });
 
+// Get next up
+app.get('/api/next', function (req, res) {
+  console.log(queue[0])
+  return res.send(queue[0]);
+});
+
 // DELETE to DESTROY
 
 // Bulk destroy all appointment
@@ -299,40 +308,24 @@ app.delete('/api/appointments', function (req, res) {
 
 // remove a single appointment
 app.delete('/api/appointments/:id', function (req, res) {
-  return AppointmentModel.findById(req.params.id, function (err, appointment) {
-    return appointment.remove(function (err) {
-      if (!err) {
-        dequeue_app(appointment.position);
-        console.log("removed");
-        return res.send('');
-      } else {
-        return res.send(err);
-      }
-    });
+  var promise = AppointmentModel.findById(req.params.id).exec();
+  promise.then(function(appointment) {
+    return appointment.remove();
+  })
+  .then(function(appointment) {
+    dequeue_app(appointment.position);
+    return res.send(queue);
+  })
+  .catch(function(err) {
+    res.send(err);
   });
 });
 
-// Get next up
-app.get('/api/appointments/next', function (req, res) {
-  console.log(queue[0])
-  return res.send(queue[0]);
-});
-
 // Remove next up
-app.delete('/api/appointments/next', function (req, res) {
-  console.log('Removing -->' + queue[0]._id)
-  var promise = AppointmentModel.findById(queue[0].id).exec();
-  promise.then(function(appointment) {
-    return appointment.remove()
-  })
-  .then(function(appointment) {
-    console.log("dequeuing")
-    dequeue_app();
-    res.send(queue)
-  })
-  .catch(function(err) {
-    console.log(err);
-  })
+app.delete('/api/next', function (req, res) {
+  console.log('Removing -->' + queue[0].id)
+  dequeue_app(0);
+  res.send(queue);
 });
 
 // Add Advisor
