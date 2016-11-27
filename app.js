@@ -5,14 +5,23 @@ var application_root = __dirname,
     bodyParser = require('body-parser'),
     methodOverride = require('method-override'),
     morgan = require('morgan');
+    Pusher = require('pusher');
 
 mongoose.Promise = require('bluebird');
 
 
+const CHANNEL = 'test_channel';
+
 var app = express();
+var pusher = new Pusher({
+  appId: '273037',
+  key: '0caec0623dbc96e698fc',
+  secret: 'da3e038a73620d26cad6',
+  encrypted: true
+});
 
 // database
-console.log("Connecting to db...");
+console.log("Connecting to db... " + process.env.MONGO);
 mongoose.connect(process.env.MONGO);
 
 // config
@@ -43,6 +52,11 @@ var Advisors = new Schema({
 
 var AdvisorModel = mongoose.model('Advisor', Advisors);
 
+var CourseCatalogModel = mongoose.model('CourseCatalog', new Schema({
+  title: String,
+  desc: String
+}), 'course_catalog');
+
 var Students = new Schema({
     name: { 
       type: String, 
@@ -50,11 +64,8 @@ var Students = new Schema({
       min: 2,
       max: 50
     },
-    phoneNumber: { 
-      type: Number, 
-      validate: function(phoneNumber) { return phoneNumber.length == 10 }
-    },
-    studenId: { type: Number, required: [true, "Student ID is required"] },
+    phoneNumber: Number,
+    studentId: { type: Number, required: [true, "Student ID is required"] },
     modified: { type: Date, default: Date.now }
 });
 
@@ -71,7 +82,7 @@ var Appointment = new Schema({
     advisorId: { 
       type: String, 
       required: [true, 'Advisor required for appointment'],
-      default: "Next Advisor"
+      default: "Next Advisor",
     },
     state: { 
       type: String,
@@ -178,9 +189,11 @@ app.get('/api', function (req, res) {
 
 // POST to CREATE
 app.post('/api/appointments', function (req, res) {
+  console.log('creating appointment');
+  console.log(req.body);
   var appointment = new AppointmentModel({
     description: req.body.description,
-    student: req.body.student,
+    student: [req.body.student],
     advisorId: req.body.advisorId,
     type: req.body.type,
     extraInfo: req.body.extraInfo,
@@ -192,9 +205,13 @@ app.post('/api/appointments', function (req, res) {
       queue.push(appointment);
       console.log("Place in queue");
       console.log(queue[queue.length - 1].position)
+
+      // Pusher
+      pusher.trigger('kiosk', 'new_appointment', appointment);
+
       return res.send(appointment)
     } else {
-      return res.send(err)
+      return res.status(400).send(err)
     }
   });
 });
@@ -271,7 +288,10 @@ app.put('/api/appointments/:id/state', function (req, res) {
 
 // List appointment
 app.get('/api/appointments', function (req, res) {
-  return res.send(queue);
+  AppointmentModel.find({state: { $ne: 'Done' }})
+    .then(apps => {
+      return res.send(apps);
+    })
 });
 
 // Single appointment
@@ -421,6 +441,13 @@ app.delete('/api/advisors/:id', function (req, res) {
       }
     });
   });
+});
+
+/* -- Course Catalog --  */
+app.get('/api/courses', (req, res) => {
+  CourseCatalogModel.find().then(courses => {
+    return res.send(courses);
+  })
 });
 
 function clientErrorHandler (err, req, res, next) {
