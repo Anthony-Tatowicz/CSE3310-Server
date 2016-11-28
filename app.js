@@ -6,6 +6,7 @@ var application_root = __dirname,
     methodOverride = require('method-override'),
     morgan = require('morgan');
     Pusher = require('pusher');
+    cors = require('cors');
 
 mongoose.Promise = require('bluebird');
 
@@ -24,6 +25,7 @@ console.log("Connecting to db... " + process.env.MONGO);
 mongoose.connect(process.env.MONGO);
 
 // config
+app.use(cors());
 app.use(bodyParser.json());
 app.use(methodOverride());
 app.use(express.static(path.join(application_root, "public")));
