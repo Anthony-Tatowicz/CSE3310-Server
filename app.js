@@ -350,6 +350,36 @@ app.delete('/api/next', function (req, res) {
   res.send(queue);
 });
 
+app.post('/api/login', (req, res) => {
+  const name = req.body.username;
+
+  AdvisorModel.findOne({ name: name })
+    .then(advisor => {
+      if(!advisor) throw new Error('Advisor not found');
+      advisor.status = 'Available';
+      return advisor.save();
+    })
+    .then(advisor => res.send(advisor))
+    .catch(e => {
+      res.status(400).send({error: e.message});
+    })
+})
+
+app.post('/api/logout', (req, res) => {
+  const name = req.body.username;
+
+  AdvisorModel.findOne({ name: name })
+    .then(advisor => {
+      if(!advisor) throw new Error('Advisor not found');
+      advisor.status = 'Unavailable';
+      return advisor.save();
+    })
+    .then(() => res.send())
+    .catch(e => {
+      res.status(400).send({error: e.message});
+    })
+})
+
 // Add Advisor
 app.post('/api/advisors', function (req, res) {
   var advisor;
