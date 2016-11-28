@@ -374,7 +374,7 @@ app.post('/api/logout', (req, res) => {
       advisor.status = 'Unavailable';
       return advisor.save();
     })
-    .then(() => res.send())
+    .then(advisor => res.send(advisor))
     .catch(e => {
       res.status(400).send({error: e.message});
     })
