@@ -1,17 +1,4 @@
-var application_root = __dirname,
-    express = require("express"),
-    path = require("path"),
-    fs = require('fs'),
-    mongoose = require('mongoose'),
-    bodyParser = require('body-parser'),
-    methodOverride = require('method-override'),
-    morgan = require('morgan'),
-    Pusher = require('pusher'),
-    cors = require('cors');
-
 var config;
-
-mongoose.Promise = require('bluebird');
 
 // Check if config file exists
 try {
@@ -21,6 +8,22 @@ try {
   console.error('We cant start the car without any keys now can we?');
   process.exit();
 }
+
+var application_root = __dirname,
+    express = require("express"),
+    path = require("path"),
+    fs = require('fs'),
+    mongoose = require('mongoose'),
+    bodyParser = require('body-parser'),
+    methodOverride = require('method-override'),
+    morgan = require('morgan'),
+    Pusher = require('pusher'),
+    mailgun = require('mailgun-js')({apiKey: config.mailgun.key, domain: config.mailgun.domain});
+    twilio = require('twilio');
+    twilioClient = new twilio.RestClient(config.twilio.acc, config.twilio.token);
+    cors = require('cors');
+
+mongoose.Promise = require('bluebird');
 
 
 const CHANNEL = 'test_channel';
@@ -487,12 +490,44 @@ app.delete('/api/advisors/:id', function (req, res) {
   });
 });
 
+/* -- Email dropform -- */
+app.post('/api/dropform', (req, res) => {
+  var link = 'https://www.uta.edu/coed/_downloads/undergrad-advising/DropForm.pdf';
+  var data = {
+    from: 'Mav Kiosk <' + config.mailgun.email + '>',
+    to: req.body.email,
+    subject: 'Mav Kiosk - Drop Form',
+    html: 'Hey, we see you wanted the drop form.<br />' +
+      '<a href="' + link + '">' + link + '</a>'
+  };
+
+  mailgun.messages().send(data, function (error, body) {
+    if(body) {
+      res.send(body);
+    }
+    else if(error.message) {
+      res.status(400).send({error: error.message});
+    }
+    
+  });
+});
+
 /* -- Course Catalog --  */
 app.get('/api/courses', (req, res) => {
   CourseCatalogModel.find().then(courses => {
     return res.send(courses);
   })
 });
+
+function sendUserText(number) {
+  twilioClient.messages.create({
+    body: 'Hello from Node',
+    to: number,  // Text this number
+    from: '+14695138782' // From a valid Twilio number
+  }, function(err, message) {
+      console.log(message.sid);
+  });
+}
 
 function clientErrorHandler (err, req, res, next) {
   if (req.xhr) {
