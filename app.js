@@ -78,11 +78,10 @@ var Students = new Schema({
     name: { 
       type: String, 
       required: [true, "Must have a student name"],
-      min: 2,
-      max: 50
+      minlength: [2, 'Student name is required'],
     },
     phoneNumber: Number,
-    studentId: { type: Number, required: [true, "Student ID is required"] },
+    studentId: { type: Number },
     modified: { type: Date, default: Date.now }
 });
 
@@ -228,7 +227,14 @@ app.post('/api/appointments', function (req, res) {
 
       return res.send(appointment)
     } else {
-      return res.status(400).send(err)
+      var msg = err.message;
+
+      if(err.name === 'ValidationError') {
+        msg = err.errors[Object.keys(err.errors)[0]].message;
+        console.log(msg);
+      }
+      //console.log(err);
+      return res.status(400).send({error: msg});
     }
   });
 });
