@@ -1,3 +1,7 @@
+# CONFIG FILE, dont leak the keeeyyzzz
+config.js
+
+
 # Logs
 logs
 *.log

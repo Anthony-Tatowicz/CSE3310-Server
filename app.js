@@ -1,29 +1,41 @@
 var application_root = __dirname,
     express = require("express"),
     path = require("path"),
+    fs = require('fs'),
     mongoose = require('mongoose'),
     bodyParser = require('body-parser'),
     methodOverride = require('method-override'),
-    morgan = require('morgan');
-    Pusher = require('pusher');
+    morgan = require('morgan'),
+    Pusher = require('pusher'),
     cors = require('cors');
 
+var config;
+
 mongoose.Promise = require('bluebird');
+
+// Check if config file exists
+try {
+  config = require('./config.js');
+} catch(e) {
+  console.error('It looks like you don\'t have the config file...');
+  console.error('We cant start the car without any keys now can we?');
+  process.exit();
+}
 
 
 const CHANNEL = 'test_channel';
 
 var app = express();
 var pusher = new Pusher({
-  appId: '273037',
-  key: '0caec0623dbc96e698fc',
-  secret: 'da3e038a73620d26cad6',
+  appId: config.pusher.app,
+  key: config.pusher.key,
+  secret: config.pusher.secret,
   encrypted: true
 });
 
 // database
-console.log("Connecting to db... " + process.env.MONGO);
-mongoose.connect(process.env.MONGO);
+console.log("Connecting to db... " + config.mongo);
+mongoose.connect(config.mongo);
 
 // config
 app.use(cors());
