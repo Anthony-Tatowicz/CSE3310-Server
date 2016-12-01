@@ -96,9 +96,7 @@ var Appointment = new Schema({
     },
     student: [Students],
     advisorId: { 
-      type: String, 
-      required: [true, 'Advisor required for appointment'],
-      default: "Next Advisor",
+      type: String
     },
     state: { 
       type: String,
@@ -111,6 +109,7 @@ var Appointment = new Schema({
         required: 'Wrong Appointment Type or No appointment Type'
     },
     extraInfo: { type: String },
+    comment: String,
     position: { type: Number, default: -1 },
     modified: { type: Date, default: Date.now }
 });
@@ -334,6 +333,48 @@ app.get('/api/next', function (req, res) {
   return res.send(queue[0]);
 });
 
+app.post('/api/appointments/next', (req, res) => {
+  var advisorId = req.body.advisorId;
+  var next = null;
+
+  AppointmentModel.findOne({advisorId: null, state: 'Waiting'})
+    .then(apt => {
+      if(!apt) throw new Error('No appointments');
+      apt.state = 'In Progress';
+      apt.advisorId = advisorId;
+      pusher.trigger('kiosk', 'update_appointment', apt);
+      return apt.save();
+    })
+    .then(apt => res.send(apt))
+    .catch(e => {
+      res.status(400).send({error: e.message});
+    })
+});
+
+app.post('/api/appointments/:id/done', (req, res) => {
+  var advisorId = req.body.advisorId;
+  var next = null;
+
+  AppointmentModel.findById(req.params.id)
+    .then(apt => {
+      if(!apt) throw new Error('No appointment');
+      apt.state = 'Done';
+      apt.comment = req.body.comment;
+      pusher.trigger('kiosk', 'remove_appointment', apt);
+      return apt.save();
+    })
+    .then(apt => res.send(apt))
+    .catch(e => {
+      res.status(400).send({error: e.message});
+    })
+});
+
+// Check if advisor is in an apt
+app.get('/api/advisors/:id/current', (req, res) => {
+  AppointmentModel.findOne({advisorId: req.params.id, state: 'In Progress'})
+    .then(apt => res.send(apt));
+});
+
 // DELETE to DESTROY
 
 // Bulk destroy all appointment
@@ -527,7 +568,7 @@ app.get('/api/courses', (req, res) => {
 
 function sendUserText(number) {
   twilioClient.messages.create({
-    body: 'Hello from Node',
+    body: 'It is your time to be advised',
     to: number,  // Text this number
     from: '+14695138782' // From a valid Twilio number
   }, function(err, message) {
