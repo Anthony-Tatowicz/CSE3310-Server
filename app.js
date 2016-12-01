@@ -30,9 +30,9 @@ const CHANNEL = 'test_channel';
 
 var app = express();
 var pusher = new Pusher({
-  appId: config.pusher.app,
-  key: config.pusher.key,
-  secret: config.pusher.secret,
+  appId: '273037',
+  key: '0caec0623dbc96e698fc',
+  secret: 'da3e038a73620d26cad6',
   encrypted: true
 });
 
