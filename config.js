@@ -3,7 +3,7 @@ module.exports = {
   pusher: {
     app: '273037',
     key: '0caec063dbc96e698fc',
-    secret: 'da3e038a73620d26cad6',
+    secret: 'da3e038a73620d26cad6'
   },
   mailgun: {
     key: 'key-b6a3c726efdc3366866bc514fc7bf92e',
