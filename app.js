@@ -419,6 +419,7 @@ app.post('/api/login', (req, res) => {
     .then(advisor => {
       if(!advisor) throw new Error('Advisor not found');
       advisor.status = 'Available';
+      pusher.trigger('kiosk', 'advisor_available', advisor);
       return advisor.save();
     })
     .then(advisor => res.send(advisor))
@@ -434,6 +435,7 @@ app.post('/api/logout', (req, res) => {
     .then(advisor => {
       if(!advisor) throw new Error('Advisor not found');
       advisor.status = 'Unavailable';
+      pusher.trigger('kiosk', 'advisor_unavailable', advisor);
       return advisor.save();
     })
     .then(advisor => res.send(advisor))
@@ -441,6 +443,11 @@ app.post('/api/logout', (req, res) => {
       res.status(400).send({error: e.message});
     })
 })
+
+app.get('/api/advisors/online', (req, res) => {
+  AdvisorModel.count({status: {$ne: 'Unavailable'}})
+    .then(count => res.send({count: count}));
+});
 
 // Add Advisor
 app.post('/api/advisors', function (req, res) {
