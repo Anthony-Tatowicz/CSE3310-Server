@@ -222,8 +222,7 @@ app.post('/api/appointments', function (req, res) {
       console.log(queue[queue.length - 1].position)
 
       // Pusher
-      pusher.trigger('kiosk', 'new_appointment', appointment)
-        .then(push => console.log(push));
+      pusher.trigger('kiosk', 'new_appointment', appointment);
 
       return res.send(appointment)
     } else {
