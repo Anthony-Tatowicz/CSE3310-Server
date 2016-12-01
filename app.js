@@ -598,5 +598,5 @@ function errorHandler (err, req, res, next) {
 
 
 // launch server
-app.listen(4242 || process.env.PORT);
+app.listen(process.env.PORT || 4242);
 console.log("Listening on 4242...");
